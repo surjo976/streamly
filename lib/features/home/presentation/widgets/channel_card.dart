@@ -19,60 +19,60 @@ class ChannelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isFullWidth = size == double.infinity;
     return GestureDetector(
       onTap: () {
         context.push('/details/${channel.id}?heroTag=$heroTagPrefix');
       },
       child: Container(
-        width: size,
-        margin: const EdgeInsets.only(right: 14),
+        width: isFullWidth ? null : size,
+        margin: isFullWidth ? EdgeInsets.zero : const EdgeInsets.only(right: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Square Card with Logo & Live Badge
             Stack(
               children: [
-                Container(
-                  width: size,
-                  height: size,
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.04),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                AspectRatio(
+                  aspectRatio: 1.0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.04),
+                        width: 1.5,
                       ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Hero(
-                      tag: 'channel-logo-${heroTagPrefix}-${channel.id}',
-                      child: channel.logo.isNotEmpty
-                          ? Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: CachedNetworkImage(
-                                imageUrl: channel.logo,
-                                fit: BoxFit.contain,
-                                placeholder: (context, url) => Shimmer.fromColors(
-                                  baseColor: Colors.grey[900]!,
-                                  highlightColor: Colors.grey[800]!,
-                                  child: Container(
-                                    width: size,
-                                    height: size,
-                                    color: Colors.black,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Hero(
+                        tag: 'channel-logo-${heroTagPrefix}-${channel.id}',
+                        child: channel.logo.isNotEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: CachedNetworkImage(
+                                  imageUrl: channel.logo,
+                                  fit: BoxFit.contain,
+                                  placeholder: (context, url) => Shimmer.fromColors(
+                                    baseColor: Colors.grey[900]!,
+                                    highlightColor: Colors.grey[800]!,
+                                    child: Container(
+                                      color: Colors.black,
+                                    ),
                                   ),
+                                  errorWidget: (context, url, error) => _buildPlaceholder(),
                                 ),
-                                errorWidget: (context, url, error) => _buildPlaceholder(),
-                              ),
-                            )
-                          : _buildPlaceholder(),
+                              )
+                            : _buildPlaceholder(),
+                      ),
                     ),
                   ),
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/models/channel_model.dart';
 import '../../../../core/providers/channels_provider.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -22,6 +23,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   Channel? _channel;
+  List<Channel> _allChannels = [];
+  String _searchQuery = "";
 
   @override
   void initState() {
@@ -48,6 +51,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
     channelsAsync.when(
       data: (channels) {
+        _allChannels = channels;
         final found = channels.firstWhere(
           (c) => c.id == widget.channelId,
           orElse: () => channels.first,
@@ -75,6 +79,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _channel = channel;
     });
 
     try {
@@ -209,6 +214,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
+      endDrawer: _buildRightDrawer(),
       body: Stack(
         children: [
           // Video player fills screen
@@ -278,7 +284,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                           )),
           ),
           
-          // Back float button overlay
+          // Back float button overlay (Left Side)
           Positioned(
             top: 24,
             left: 24,
@@ -290,7 +296,166 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               ),
             ),
           ),
+
+          // Menu / Channel List float button overlay (Right Side)
+          Positioned(
+            top: 24,
+            right: 24,
+            child: Builder(
+              builder: (context) {
+                return CircleAvatar(
+                  backgroundColor: Colors.black.withOpacity(0.5),
+                  child: IconButton(
+                    icon: const Icon(Icons.menu_open_rounded, color: Colors.white),
+                    tooltip: 'Channel List',
+                    onPressed: () {
+                      Scaffold.of(context).openEndDrawer();
+                    },
+                  ),
+                );
+              }
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRightDrawer() {
+    return Drawer(
+      backgroundColor: const Color(0xFF0F0F1A),
+      width: 320,
+      child: StatefulBuilder(
+        builder: (context, setDrawerState) {
+          // Filter channels based on search query
+          final filteredChannels = _allChannels.where((c) {
+            return c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                   c.group.toLowerCase().contains(_searchQuery.toLowerCase());
+          }).toList();
+
+          return SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drawer Title
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                  child: Text(
+                    'All Channels',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: TextField(
+                    onChanged: (value) {
+                      setDrawerState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Search TV channel...',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70),
+                      fillColor: Colors.white.withOpacity(0.06),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const Divider(color: Colors.white10),
+
+                // Channel List
+                Expanded(
+                  child: filteredChannels.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No channels found',
+                            style: TextStyle(color: Colors.white38, fontSize: 14),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: filteredChannels.length,
+                          itemBuilder: (context, index) {
+                            final c = filteredChannels[index];
+                            final isPlaying = _channel?.id == c.id;
+
+                            return ListTile(
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  color: Colors.white.withOpacity(0.04),
+                                  padding: const EdgeInsets.all(4),
+                                  child: c.logo.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: c.logo,
+                                          fit: BoxFit.contain,
+                                          errorWidget: (_, __, ___) => const Icon(
+                                            Icons.live_tv_rounded,
+                                            color: Colors.white30,
+                                            size: 20,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.live_tv_rounded,
+                                          color: Colors.white30,
+                                          size: 20,
+                                        ),
+                                ),
+                              ),
+                              title: Text(
+                                c.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isPlaying ? AppTheme.primaryColor : Colors.white70,
+                                  fontWeight: isPlaying ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              subtitle: Text(
+                                c.group,
+                                style: TextStyle(
+                                  color: isPlaying ? AppTheme.primaryColor.withOpacity(0.7) : Colors.white30,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              trailing: isPlaying
+                                  ? const Icon(
+                                      Icons.play_circle_fill_rounded,
+                                      color: AppTheme.primaryColor,
+                                      size: 20,
+                                    )
+                                  : null,
+                              tileColor: isPlaying ? Colors.white.withOpacity(0.04) : null,
+                              onTap: () {
+                                // Close the drawer
+                                Navigator.pop(context);
+                                // Play selected channel
+                                _initializePlayer(c);
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
