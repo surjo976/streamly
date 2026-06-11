@@ -94,7 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _buildChannelShelf(filteredChannels),
+                _buildChannelShelf(filteredChannels, 'featured'),
 
                 const SizedBox(height: 24),
 
@@ -104,18 +104,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 12),
                   _buildChannelShelf(
                     channels.where((c) => c.group == 'Bangla').toList(),
+                    'bangla',
                   ),
                   const SizedBox(height: 24),
                   _buildSectionHeader(context, 'Live Sports'),
                   const SizedBox(height: 12),
                   _buildChannelShelf(
                     channels.where((c) => c.group == 'Sports' || c.group.contains('IPL') || c.group.contains('PSL')).toList(),
+                    'sports',
                   ),
                   const SizedBox(height: 24),
                   _buildSectionHeader(context, 'News Networks'),
                   const SizedBox(height: 12),
                   _buildChannelShelf(
                     channels.where((c) => c.group == 'News' || c.group.contains('News')).toList(),
+                    'news',
                   ),
                 ],
 
@@ -168,7 +171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           height: screenHeight * 0.52,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1E1E24), Color(0xFF09090B)],
+              colors: [Color(0xFF1A1035), Color(0xFF06060F)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -267,7 +270,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   ElevatedButton.icon(
                     onPressed: () {
-                      context.push('/player/${Uri.encodeComponent(channel.name)}');
+                      context.push('/player/${channel.id}');
                     },
                     icon: const Icon(Icons.play_arrow_rounded, size: 28, color: Colors.black),
                     label: const Text(
@@ -289,7 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(width: 12),
                   OutlinedButton.icon(
                     onPressed: () {
-                      context.push('/details/${Uri.encodeComponent(channel.name)}');
+                      context.push('/details/${channel.id}?heroTag=banner');
                     },
                     icon: const Icon(Icons.info_outline_rounded, size: 22, color: Colors.white),
                     label: const Text(
@@ -360,7 +363,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildChannelShelf(List<Channel> channels) {
+  Widget _buildChannelShelf(List<Channel> channels, String heroTagPrefix) {
     return SizedBox(
       height: 200,
       child: ListView.builder(
@@ -368,7 +371,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         itemCount: channels.length,
         itemBuilder: (context, index) {
-          return ChannelCard(channel: channels[index]);
+          return ChannelCard(
+            channel: channels[index],
+            heroTagPrefix: heroTagPrefix,
+          );
         },
       ),
     );

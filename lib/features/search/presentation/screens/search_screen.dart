@@ -219,7 +219,7 @@ class SearchScreen extends ConsumerWidget {
                   ),
                   trailing: const Icon(Icons.play_arrow_rounded, color: AppTheme.primaryColor),
                   onTap: () {
-                    context.push('/player/${Uri.encodeComponent(channel.name)}');
+                    context.push('/player/${channel.id}');
                   },
                 );
               },
@@ -277,6 +277,7 @@ class SearchScreen extends ConsumerWidget {
         return ChannelCard(
           channel: channel,
           size: double.infinity,
+          heroTagPrefix: 'search',
         );
       },
     );

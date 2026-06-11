@@ -8,18 +8,20 @@ import '../../../../core/theme/app_theme.dart';
 class ChannelCard extends StatelessWidget {
   final Channel channel;
   final double size;
+  final String heroTagPrefix;
 
   const ChannelCard({
     super.key,
     required this.channel,
     this.size = 130,
+    this.heroTagPrefix = 'default',
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        context.push('/details/${Uri.encodeComponent(channel.name)}');
+        context.push('/details/${channel.id}?heroTag=$heroTagPrefix');
       },
       child: Container(
         width: size,
@@ -51,7 +53,7 @@ class ChannelCard extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(18),
                     child: Hero(
-                      tag: 'channel-logo-${channel.name}',
+                      tag: 'channel-logo-${heroTagPrefix}-${channel.id}',
                       child: channel.logo.isNotEmpty
                           ? Padding(
                               padding: const EdgeInsets.all(12),

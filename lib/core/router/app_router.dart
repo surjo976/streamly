@@ -6,15 +6,20 @@ import '../../features/details/presentation/screens/details_screen.dart';
 import '../../features/player/presentation/screens/player_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/watchlist/presentation/screens/watchlist_screen.dart';
-import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/splash/presentation/screens/splash_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 final shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouter = GoRouter(
-  initialLocation: '/home',
+  initialLocation: '/splash',
   navigatorKey: rootNavigatorKey,
   routes: [
+    GoRoute(
+      path: '/splash',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => const SplashScreen(),
+    ),
     ShellRoute(
       navigatorKey: shellNavigatorKey,
       builder: (context, state, child) {
@@ -39,28 +44,23 @@ final appRouter = GoRouter(
             child: WatchlistScreen(),
           ),
         ),
-        GoRoute(
-          path: '/profile',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: ProfileScreen(),
-          ),
-        ),
       ],
     ),
     GoRoute(
-      path: '/details/:name',
+      path: '/details/:id',
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
-        final name = state.pathParameters['name'] ?? '';
-        return DetailsScreen(channelName: name);
+        final id = state.pathParameters['id'] ?? '';
+        final heroTag = state.uri.queryParameters['heroTag'] ?? 'default';
+        return DetailsScreen(channelId: id, heroTagPrefix: heroTag);
       },
     ),
     GoRoute(
-      path: '/player/:name',
+      path: '/player/:id',
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
-        final name = state.pathParameters['name'] ?? '';
-        return PlayerScreen(channelName: name);
+        final id = state.pathParameters['id'] ?? '';
+        return PlayerScreen(channelId: id);
       },
     ),
   ],

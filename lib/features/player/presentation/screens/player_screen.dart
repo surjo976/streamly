@@ -8,9 +8,9 @@ import '../../../../core/providers/channels_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class PlayerScreen extends ConsumerStatefulWidget {
-  final String channelName;
+  final String channelId;
 
-  const PlayerScreen({super.key, required this.channelName});
+  const PlayerScreen({super.key, required this.channelId});
 
   @override
   ConsumerState<PlayerScreen> createState() => _PlayerScreenState();
@@ -44,13 +44,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   }
 
   void _loadChannelAndInitialize() async {
-    final decodedName = Uri.decodeComponent(widget.channelName);
     final channelsAsync = ref.read(channelsProvider);
 
     channelsAsync.when(
       data: (channels) {
         final found = channels.firstWhere(
-          (c) => c.name == decodedName,
+          (c) => c.id == widget.channelId,
           orElse: () => channels.first,
         );
         _channel = found;
@@ -71,29 +70,57 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   }
 
   void _initializePlayer(Channel channel) async {
+    _disposeControllers();
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
+      final uri = Uri.parse(channel.url);
+      debugPrint("INITIALIZING PLAYER WITH URL: ${channel.url}");
+      
+      // Determine format hint from URL extension to guarantee ExoPlayer/AVPlayer uses the right HLS driver
+      VideoFormat? formatHint;
+      if (channel.url.toLowerCase().contains('.m3u8')) {
+        formatHint = VideoFormat.hls;
+      }
+
       _videoPlayerController = VideoPlayerController.networkUrl(
-        Uri.parse(channel.url),
-        videoPlayerOptions: VideoPlayerOptions(allowBackgroundPlayback: false),
+        uri,
+        formatHint: formatHint,
+        videoPlayerOptions: VideoPlayerOptions(
+          allowBackgroundPlayback: false,
+          mixWithOthers: false,
+        ),
       );
       
       await _videoPlayerController!.initialize();
+
+      double aspectRatio = 16 / 9;
+      if (_videoPlayerController!.value.size.width > 0 &&
+          _videoPlayerController!.value.size.height > 0) {
+        aspectRatio = _videoPlayerController!.value.aspectRatio;
+      }
 
       _chewieController = ChewieController(
         videoPlayerController: _videoPlayerController!,
         autoPlay: true,
         looping: false,
-        isLive: true, // Optimizes UI controls for Live TV (removes timeline seeker, adds Live badge)
-        aspectRatio: _videoPlayerController!.value.aspectRatio,
+        isLive: true,
+        aspectRatio: aspectRatio,
         allowFullScreen: true,
         fullScreenByDefault: false,
-        allowedScreenSleep: false, // Keep screen awake while watching live TV
+        allowedScreenSleep: false,
+        draggableProgressBar: false,
+        showControlsOnInitialize: false,
+        allowMuting: true,
+        hideControlsTimer: const Duration(seconds: 3),
         placeholder: Container(
           color: Colors.black,
           child: const Center(
-            child: CircularProgressIndicator(
-              color: AppTheme.primaryColor,
-            ),
+            child: CircularProgressIndicator(color: AppTheme.primaryColor),
           ),
         ),
         errorBuilder: (context, errorMessage) {
@@ -107,11 +134,19 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                   errorMessage,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => _initializePlayer(channel),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+                  child: const Text('Retry'),
+                )
               ],
             ),
           );
         },
       );
+
+      _videoPlayerController!.addListener(_videoPlayerListener);
 
       if (mounted) {
         setState(() {
@@ -128,10 +163,34 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     }
   }
 
+  void _videoPlayerListener() {
+    if (_videoPlayerController == null) return;
+    
+    final value = _videoPlayerController!.value;
+    if (value.hasError) {
+      debugPrint("PLAYER ERROR: ${value.errorDescription}");
+      setState(() {
+        _errorMessage = value.errorDescription;
+      });
+      _videoPlayerController!.removeListener(_videoPlayerListener);
+    }
+  }
+
+  void _disposeControllers() {
+    if (_videoPlayerController != null) {
+      _videoPlayerController!.removeListener(_videoPlayerListener);
+      _videoPlayerController!.dispose();
+      _videoPlayerController = null;
+    }
+    if (_chewieController != null) {
+      _chewieController!.dispose();
+      _chewieController = null;
+    }
+  }
+
   @override
   void dispose() {
-    _videoPlayerController?.dispose();
-    _chewieController?.dispose();
+    _disposeControllers();
     // Restore default portrait configurations on exit
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -143,11 +202,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final chewieController = _chewieController;
+    final isPlayerInitialized = chewieController != null &&
+        _videoPlayerController != null &&
+        _videoPlayerController!.value.isInitialized;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Native Stream Player
+          // Video player fills screen
           Positioned.fill(
             child: _isLoading
                 ? const Center(
@@ -180,10 +244,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                             const SizedBox(height: 20),
                             ElevatedButton.icon(
                               onPressed: () {
-                                setState(() {
-                                  _isLoading = true;
-                                  _errorMessage = null;
-                                });
                                 if (_channel != null) {
                                   _initializePlayer(_channel!);
                                 } else {
@@ -202,13 +262,20 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                           ],
                         ),
                       )
-                    : SafeArea(
-                        child: Center(
-                          child: Chewie(
-                            controller: _chewieController!,
-                          ),
-                        ),
-                      ),
+                    : (isPlayerInitialized
+                        ? Center(
+                            child: AspectRatio(
+                              aspectRatio: chewieController.aspectRatio ?? 16/9,
+                              child: Chewie(
+                                controller: chewieController,
+                              ),
+                            ),
+                          )
+                        : const Center(
+                            child: CircularProgressIndicator(
+                              color: AppTheme.primaryColor,
+                            ),
+                          )),
           ),
           
           // Back float button overlay

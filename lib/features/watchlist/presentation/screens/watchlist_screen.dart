@@ -38,7 +38,7 @@ class WatchlistScreen extends ConsumerWidget {
               child: channelsAsync.when(
                 data: (channels) {
                   final watchlistChannels = channels
-                      .where((c) => watchlistNames.contains(c.name))
+                      .where((c) => watchlistNames.contains(c.id))
                       .toList();
 
                   if (watchlistChannels.isEmpty) {
@@ -151,6 +151,7 @@ class WatchlistScreen extends ConsumerWidget {
         return ChannelCard(
           channel: channel,
           size: double.infinity,
+          heroTagPrefix: 'watchlist',
         );
       },
     );

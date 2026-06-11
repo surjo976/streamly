@@ -7,32 +7,34 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../watchlist/presentation/providers/watchlist_provider.dart';
 
 class DetailsScreen extends ConsumerWidget {
-  final String channelName;
+  final String channelId;
+  final String heroTagPrefix;
 
   const DetailsScreen({
     super.key,
-    required this.channelName,
+    required this.channelId,
+    this.heroTagPrefix = 'default',
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final decodedName = Uri.decodeComponent(channelName);
     final channelsAsync = ref.watch(channelsProvider);
     final watchlist = ref.watch(watchlistProvider);
-    final isInWatchlist = watchlist.contains(decodedName);
 
     return Scaffold(
       body: channelsAsync.when(
         data: (channels) {
           // Find the active channel
           final channel = channels.firstWhere(
-            (c) => c.name == decodedName,
+            (c) => c.id == channelId,
             orElse: () => channels.first,
           );
 
+          final isInWatchlist = watchlist.contains(channel.id);
+
           // Find recommendations (same group, different channel)
           final recommendations = channels
-              .where((c) => c.group == channel.group && c.name != channel.name)
+              .where((c) => c.group == channel.group && c.id != channel.id)
               .take(15) // Limit recommendations count for smooth scrolling
               .toList();
 
@@ -45,13 +47,13 @@ class DetailsScreen extends ConsumerWidget {
                   children: [
                     // Glassmorphic background blur using logo
                     Hero(
-                      tag: 'channel-logo-${channel.name}',
+                      tag: 'channel-logo-${heroTagPrefix}-${channel.id}',
                       child: Container(
                         width: double.infinity,
                         height: 380,
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Color(0xFF1E1E24), Color(0xFF09090B)],
+                            colors: [Color(0xFF1A1035), Color(0xFF06060F)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -115,7 +117,7 @@ class DetailsScreen extends ConsumerWidget {
                                   color: isInWatchlist ? AppTheme.primaryColor : Colors.white,
                                 ),
                                 onPressed: () {
-                                  ref.read(watchlistProvider.notifier).toggleWatchlist(channel.name);
+                                  ref.read(watchlistProvider.notifier).toggleWatchlist(channel.id);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       backgroundColor: AppTheme.surfaceColor,
@@ -221,7 +223,7 @@ class DetailsScreen extends ConsumerWidget {
                         ),
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            context.push('/player/${Uri.encodeComponent(channel.name)}');
+                            context.push('/player/${channel.id}');
                           },
                           icon: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
                           label: const Text(
@@ -284,7 +286,7 @@ class DetailsScreen extends ConsumerWidget {
                               final recChannel = recommendations[index];
                               return GestureDetector(
                                 onTap: () {
-                                  context.pushReplacement('/details/${Uri.encodeComponent(recChannel.name)}');
+                                  context.pushReplacement('/details/${recChannel.id}');
                                 },
                                 child: Container(
                                   width: 100,

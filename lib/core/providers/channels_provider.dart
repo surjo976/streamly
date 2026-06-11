@@ -3,11 +3,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/channel_model.dart';
 
-// FutureProvider to load and parse the channels list from assets/files.json
+// FutureProvider to load and parse the channels list from assets/files.json with index-based unique IDs
 final channelsProvider = FutureProvider<List<Channel>>((ref) async {
   final jsonString = await rootBundle.loadString('assets/files.json');
   final List<dynamic> jsonList = jsonDecode(jsonString) as List<dynamic>;
-  return jsonList.map((json) => Channel.fromJson(json as Map<String, dynamic>)).toList();
+  
+  final List<Channel> list = [];
+  for (int i = 0; i < jsonList.length; i++) {
+    list.add(
+      Channel.fromJson(
+        jsonList[i] as Map<String, dynamic>,
+        i.toString(),
+      ),
+    );
+  }
+  return list;
 });
 
 // Provider to extract and sort the channel groups based on channel count
