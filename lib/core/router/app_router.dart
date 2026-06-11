@@ -6,6 +6,7 @@ import '../../features/details/presentation/screens/details_screen.dart';
 import '../../features/player/presentation/screens/player_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/watchlist/presentation/screens/watchlist_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -42,6 +43,12 @@ final appRouter = GoRouter(
           path: '/watchlist',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: WatchlistScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/profile',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: ProfileScreen(),
           ),
         ),
       ],

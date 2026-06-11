@@ -139,10 +139,10 @@ class WatchlistScreen extends ConsumerWidget {
   Widget _buildWatchlistGrid(List<Channel> channels) {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.85,
-        crossAxisSpacing: 16,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 144,
+        childAspectRatio: 0.72,
+        crossAxisSpacing: 12,
         mainAxisSpacing: 16,
       ),
       itemCount: channels.length,

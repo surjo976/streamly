@@ -26,7 +26,9 @@ class ChannelCard extends StatelessWidget {
       },
       child: Container(
         width: isFullWidth ? null : size,
-        margin: isFullWidth ? EdgeInsets.zero : const EdgeInsets.only(right: 14),
+        margin: isFullWidth
+            ? EdgeInsets.zero
+            : const EdgeInsets.only(right: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -61,14 +63,14 @@ class ChannelCard extends StatelessWidget {
                                 child: CachedNetworkImage(
                                   imageUrl: channel.logo,
                                   fit: BoxFit.contain,
-                                  placeholder: (context, url) => Shimmer.fromColors(
-                                    baseColor: Colors.grey[900]!,
-                                    highlightColor: Colors.grey[800]!,
-                                    child: Container(
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) => _buildPlaceholder(),
+                                  placeholder: (context, url) =>
+                                      Shimmer.fromColors(
+                                        baseColor: Colors.grey[900]!,
+                                        highlightColor: Colors.grey[800]!,
+                                        child: Container(color: Colors.black),
+                                      ),
+                                  errorWidget: (context, url, error) =>
+                                      _buildPlaceholder(),
                                 ),
                               )
                             : _buildPlaceholder(),
@@ -81,7 +83,10 @@ class ChannelCard extends StatelessWidget {
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.accentRed,
                       borderRadius: BorderRadius.circular(6),
@@ -126,9 +131,9 @@ class ChannelCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 2),
             // Category tag
@@ -155,11 +160,7 @@ class ChannelCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.tv_rounded,
-            color: AppTheme.textSecondary,
-            size: 32,
-          ),
+          const Icon(Icons.tv_rounded, color: AppTheme.textSecondary, size: 32),
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),

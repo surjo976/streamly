@@ -1,11 +1,5 @@
 [
   {
-    "name": "Ananda TV",
-    "logo": "https://s3.aynaott.com/storage/897698f593fc07974fc46881a440733d",
-    "group": "Bangla",
-    "url": "https://tvsen6.aynaott.com/anandatv/index.m3u8?e=1779283759&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=504b9350b4703116ca4ab20e4013288e"
-  },
-  {
     "name": "Bangla TV",
     "logo": "https://s3.aynaott.com/storage/e42ecfa90e3d6b15bdb7fea5ef673864",
     "group": "Bangla",
@@ -5050,6 +5044,12 @@
     "logo": "https://i.imgur.com/MbM0E6L.png",
     "group": "North Macedonia",
     "url": "https://live.vtv.mk/live/vtv/chunks.m3u8"
+  },
+  {
+    "name": "Ananda TV",
+    "logo": "https://s3.aynaott.com/storage/897698f593fc07974fc46881a440733d",
+    "group": "Bangla",
+    "url": "https://tvsen6.aynaott.com/anandatv/index.m3u8?e=1779283759&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=504b9350b4703116ca4ab20e4013288e"
   },
   {
     "name": "Frikanalen",

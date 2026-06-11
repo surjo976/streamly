@@ -94,7 +94,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _buildChannelShelf(filteredChannels, 'featured'),
+                _selectedCategory == 'All'
+                    ? _buildChannelShelf(filteredChannels, 'featured')
+                    : _buildChannelGrid(filteredChannels, 'category'),
 
                 const SizedBox(height: 24),
 
@@ -377,6 +379,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildChannelGrid(List<Channel> channels, String heroTagPrefix) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 144,
+        childAspectRatio: 0.72,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: channels.length,
+      itemBuilder: (context, index) {
+        return ChannelCard(
+          channel: channels[index],
+          size: double.infinity,
+          heroTagPrefix: heroTagPrefix,
+        );
+      },
     );
   }
 

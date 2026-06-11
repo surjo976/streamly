@@ -16,6 +16,7 @@ class MainWrapper extends StatelessWidget {
     if (location.startsWith('/home')) return 0;
     if (location.startsWith('/search')) return 1;
     if (location.startsWith('/watchlist')) return 2;
+    if (location.startsWith('/profile')) return 3;
     return 0;
   }
 
@@ -29,6 +30,9 @@ class MainWrapper extends StatelessWidget {
         break;
       case 2:
         context.go('/watchlist');
+        break;
+      case 3:
+        context.go('/profile');
         break;
     }
   }
@@ -90,6 +94,13 @@ class MainWrapper extends StatelessWidget {
                         currentIndex: selectedIndex,
                         icon: Icons.bookmark_rounded,
                         label: 'Watchlist',
+                      ),
+                      _buildNavItem(
+                        context: context,
+                        index: 3,
+                        currentIndex: selectedIndex,
+                        icon: Icons.person_rounded,
+                        label: 'Profile',
                       ),
                     ],
                   ),

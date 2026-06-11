@@ -265,10 +265,10 @@ class SearchScreen extends ConsumerWidget {
 
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.85, // Optimized ratio for square channel cards
-        crossAxisSpacing: 16,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 144,
+        childAspectRatio: 0.72,
+        crossAxisSpacing: 12,
         mainAxisSpacing: 16,
       ),
       itemCount: results.length,
