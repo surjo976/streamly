@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +26,44 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   Channel? _channel;
   List<Channel> _allChannels = [];
   String _searchQuery = "";
+  
+  int _loadingProgress = 0;
+  Timer? _loadingTimer;
+
+  void _startLoadingProgress() {
+    _loadingTimer?.cancel();
+    setState(() {
+      _loadingProgress = 0;
+    });
+    
+    _loadingTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      
+      setState(() {
+        if (_loadingProgress < 75) {
+          _loadingProgress += 5; // Fast progress up to 75%
+        } else if (_loadingProgress < 95) {
+          _loadingProgress += 1; // Slower progress up to 95%
+        } else if (_loadingProgress < 99) {
+          // Increment by fractional steps or stay at 99%
+          if (timer.tick % 5 == 0) {
+            _loadingProgress += 1;
+          }
+        }
+      });
+    });
+  }
+
+  void _stopLoadingProgress() {
+    _loadingTimer?.cancel();
+    _loadingTimer = null;
+    setState(() {
+      _loadingProgress = 100;
+    });
+  }
 
   @override
   void initState() {
@@ -75,6 +114,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
   void _initializePlayer(Channel channel) async {
     _disposeControllers();
+    _startLoadingProgress();
 
     setState(() {
       _isLoading = true;
@@ -124,8 +164,22 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         hideControlsTimer: const Duration(seconds: 3),
         placeholder: Container(
           color: Colors.black,
-          child: const Center(
-            child: CircularProgressIndicator(color: AppTheme.primaryColor),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: CircularProgressIndicator(color: AppTheme.primaryColor, strokeWidth: 3),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '$_loadingProgress%',
+                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
           ),
         ),
         errorBuilder: (context, errorMessage) {
@@ -153,12 +207,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
       _videoPlayerController!.addListener(_videoPlayerListener);
 
+      _stopLoadingProgress();
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
     } catch (e) {
+      _stopLoadingProgress();
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -205,6 +261,52 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     super.dispose();
   }
 
+  Widget _buildProgressBar() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 76,
+                height: 76,
+                child: CircularProgressIndicator(
+                  value: _loadingProgress / 100,
+                  strokeWidth: 4,
+                  backgroundColor: Colors.white10,
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                ),
+              ),
+              Text(
+                '$_loadingProgress%',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _loadingProgress < 40
+                ? 'Connecting to channel stream...'
+                : _loadingProgress < 85
+                    ? 'Downloading stream chunks...'
+                    : 'Buffering live video & audio...',
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final chewieController = _chewieController;
@@ -220,11 +322,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           // Video player fills screen
           Positioned.fill(
             child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppTheme.primaryColor,
-                    ),
-                  )
+                ? _buildProgressBar()
                 : _errorMessage != null
                     ? Center(
                         child: Column(
@@ -277,11 +375,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                               ),
                             ),
                           )
-                        : const Center(
-                            child: CircularProgressIndicator(
-                              color: AppTheme.primaryColor,
-                            ),
-                          )),
+                        : _buildProgressBar()),
           ),
           
           // Back float button overlay (Left Side)

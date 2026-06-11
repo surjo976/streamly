@@ -21,9 +21,9 @@ class ProfileScreen extends StatelessWidget {
                   child: Text(
                     'Developer Profile',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
 
@@ -73,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Tonmay Sen (Durjo)',
+                                  'Tonmay Sen (Surjo)',
                                   style: TextStyle(
                                     color: AppTheme.textPrimary,
                                     fontSize: 20,
@@ -94,7 +94,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      
+
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 20.0),
                         child: Divider(color: Colors.white10),
