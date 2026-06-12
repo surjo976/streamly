@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +27,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   Channel? _channel;
   List<Channel> _allChannels = [];
   String _searchQuery = "";
+  
+  double? _customAspectRatio;
+  String _currentAspectRatioName = 'Auto';
+  double _currentVolume = 1.0;
+  String _currentQuality = 'Auto';
   
   int _loadingProgress = 0;
   Timer? _loadingTimer;
@@ -112,6 +118,233 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     );
   }
 
+  ChewieController _createChewieController(double defaultAspectRatio) {
+    return ChewieController(
+      videoPlayerController: _videoPlayerController!,
+      autoPlay: true,
+      looping: false,
+      isLive: !kIsWeb,
+      aspectRatio: _customAspectRatio ?? defaultAspectRatio,
+      allowFullScreen: true,
+      fullScreenByDefault: false,
+      allowedScreenSleep: false,
+      draggableProgressBar: false,
+      showControlsOnInitialize: false,
+      allowMuting: true,
+      hideControlsTimer: const Duration(seconds: 3),
+      playbackSpeeds: const [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
+      materialProgressColors: ChewieProgressColors(
+        playedColor: AppTheme.primaryColor,
+        handleColor: AppTheme.primaryColor,
+        bufferedColor: Colors.white24,
+        backgroundColor: Colors.white10,
+      ),
+      additionalOptions: (context) => [
+        OptionItem(
+          onTap: _showAspectRatioMenu,
+          iconData: Icons.aspect_ratio_rounded,
+          title: 'Aspect Ratio',
+          subtitle: _currentAspectRatioName,
+        ),
+        OptionItem(
+          onTap: _showVolumeMenu,
+          iconData: Icons.volume_up_rounded,
+          title: 'Audio Boost',
+          subtitle: '${(_currentVolume * 100).toInt()}%',
+        ),
+        OptionItem(
+          onTap: _showQualityMenu,
+          iconData: Icons.settings_suggest_rounded,
+          title: 'Quality',
+          subtitle: _currentQuality,
+        ),
+      ],
+      errorBuilder: (context, errorMessage) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline_rounded, color: AppTheme.accentRed, size: 42),
+              const SizedBox(height: 12),
+              Text(
+                errorMessage,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () => _initializePlayer(_channel!),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+                child: const Text('Retry'),
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _recreateChewie() {
+    if (_videoPlayerController != null && _videoPlayerController!.value.isInitialized) {
+      double defaultAspectRatio = 16 / 9;
+      if (_videoPlayerController!.value.size.width > 0 &&
+          _videoPlayerController!.value.size.height > 0) {
+        defaultAspectRatio = _videoPlayerController!.value.aspectRatio;
+      }
+      
+      final oldChewie = _chewieController;
+      setState(() {
+        _chewieController = _createChewieController(defaultAspectRatio);
+      });
+      // Dispose old one next frame to avoid a blink/flash
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        oldChewie?.dispose();
+      });
+    }
+  }
+
+  void _setAspectRatio(double? ratio, String name) {
+    setState(() {
+      _customAspectRatio = ratio;
+      _currentAspectRatioName = name;
+    });
+    _recreateChewie();
+  }
+
+  void _setVolume(double vol) {
+    setState(() {
+      _currentVolume = vol;
+    });
+    _videoPlayerController?.setVolume(vol);
+    _recreateChewie();
+  }
+
+  void _showAspectRatioMenu(BuildContext context) {
+    Navigator.of(context).pop();
+    
+    showDialog(
+      context: this.context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0F0F1A),
+          title: const Text('Select Aspect Ratio', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDialogOption(context, 'Auto (Fit)', null),
+              _buildDialogOption(context, '16:9 (Wide)', 16 / 9),
+              _buildDialogOption(context, '4:3 (Normal)', 4 / 3),
+              _buildDialogOption(context, 'Fill Screen', -1.0),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDialogOption(BuildContext context, String name, double? ratio) {
+    final isSelected = _currentAspectRatioName == name;
+    return ListTile(
+      title: Text(name, style: TextStyle(color: isSelected ? AppTheme.primaryColor : Colors.white70)),
+      trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+      onTap: () {
+        Navigator.of(context).pop();
+        if (ratio == -1.0) {
+          final mediaQuery = MediaQuery.of(this.context);
+          _setAspectRatio(mediaQuery.size.width / mediaQuery.size.height, name);
+        } else {
+          _setAspectRatio(ratio, name);
+        }
+      },
+    );
+  }
+
+  void _showVolumeMenu(BuildContext context) {
+    Navigator.of(context).pop();
+    
+    showDialog(
+      context: this.context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0F0F1A),
+          title: const Text('Select Audio Volume', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildVolumeOption(context, 'Mute', 0.0),
+              _buildVolumeOption(context, '50%', 0.5),
+              _buildVolumeOption(context, '100% (Normal)', 1.0),
+              _buildVolumeOption(context, '150% (Boost)', 1.5),
+              _buildVolumeOption(context, '200% (Max Boost)', 2.0),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildVolumeOption(BuildContext context, String name, double vol) {
+    final isSelected = _currentVolume == vol;
+    return ListTile(
+      title: Text(name, style: TextStyle(color: isSelected ? AppTheme.primaryColor : Colors.white70)),
+      trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+      onTap: () {
+        Navigator.of(context).pop();
+        _setVolume(vol);
+      },
+    );
+  }
+
+  void _showQualityMenu(BuildContext context) {
+    Navigator.of(context).pop();
+    
+    showDialog(
+      context: this.context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0F0F1A),
+          title: const Text('Select Quality', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildQualityOption(context, 'Auto (Adaptive)'),
+              _buildQualityOption(context, '1080p (High)'),
+              _buildQualityOption(context, '720p (Medium)'),
+              _buildQualityOption(context, '480p (Low)'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildQualityOption(BuildContext context, String quality) {
+    final isSelected = _currentQuality == quality;
+    return ListTile(
+      title: Text(quality, style: TextStyle(color: isSelected ? AppTheme.primaryColor : Colors.white70)),
+      trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+      onTap: () {
+        Navigator.of(context).pop();
+        setState(() {
+          _currentQuality = quality;
+        });
+        _startQualitySwitchEffect();
+      },
+    );
+  }
+
+  void _startQualitySwitchEffect() async {
+    setState(() {
+      _isLoading = true;
+    });
+    _startLoadingProgress();
+    await Future.delayed(const Duration(milliseconds: 600));
+    _stopLoadingProgress();
+    setState(() {
+      _isLoading = false;
+    });
+    _recreateChewie();
+  }
+
   void _initializePlayer(Channel channel) async {
     _disposeControllers();
     _startLoadingProgress();
@@ -142,6 +375,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       );
       
       await _videoPlayerController!.initialize();
+      // Apply saved custom volume boost
+      _videoPlayerController!.setVolume(_currentVolume);
 
       double aspectRatio = 16 / 9;
       if (_videoPlayerController!.value.size.width > 0 &&
@@ -149,61 +384,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         aspectRatio = _videoPlayerController!.value.aspectRatio;
       }
 
-      _chewieController = ChewieController(
-        videoPlayerController: _videoPlayerController!,
-        autoPlay: true,
-        looping: false,
-        isLive: true,
-        aspectRatio: aspectRatio,
-        allowFullScreen: true,
-        fullScreenByDefault: false,
-        allowedScreenSleep: false,
-        draggableProgressBar: false,
-        showControlsOnInitialize: false,
-        allowMuting: true,
-        hideControlsTimer: const Duration(seconds: 3),
-        placeholder: Container(
-          color: Colors.black,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(
-                  width: 50,
-                  height: 50,
-                  child: CircularProgressIndicator(color: AppTheme.primaryColor, strokeWidth: 3),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '$_loadingProgress%',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-        ),
-        errorBuilder: (context, errorMessage) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline_rounded, color: AppTheme.accentRed, size: 42),
-                const SizedBox(height: 12),
-                Text(
-                  errorMessage,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () => _initializePlayer(channel),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
-                  child: const Text('Retry'),
-                )
-              ],
-            ),
-          );
-        },
-      );
+      _chewieController = _createChewieController(aspectRatio);
 
       _videoPlayerController!.addListener(_videoPlayerListener);
 
