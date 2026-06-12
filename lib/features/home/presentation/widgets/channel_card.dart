@@ -20,15 +20,16 @@ class ChannelCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFullWidth = size == double.infinity;
-    return GestureDetector(
-      onTap: () {
-        context.push('/details/${channel.id}?heroTag=$heroTagPrefix');
-      },
-      child: Container(
-        width: isFullWidth ? null : size,
-        margin: isFullWidth
-            ? EdgeInsets.zero
-            : const EdgeInsets.only(right: 14),
+    return Container(
+      width: isFullWidth ? null : size,
+      margin: isFullWidth
+          ? EdgeInsets.zero
+          : const EdgeInsets.only(right: 14),
+      child: InkWell(
+        onTap: () {
+          context.push('/details/${channel.id}?heroTag=$heroTagPrefix');
+        },
+        borderRadius: BorderRadius.circular(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -142,11 +143,11 @@ class ChannelCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: AppTheme.primaryColor.withOpacity(0.85),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
+              color: AppTheme.primaryColor.withOpacity(0.85),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
             ),
+          ),
           ],
         ),
       ),
