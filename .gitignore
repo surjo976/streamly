@@ -45,4 +45,4 @@ app.*.map.json
 /android/app/release
 
 # User added ignores
-/assets/files.json
+/assets/*.json

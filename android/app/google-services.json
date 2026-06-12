@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "149272084035",
+    "project_id": "streamly-ee877",
+    "storage_bucket": "streamly-ee877.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:149272084035:android:647f1a6be0ad5fc5b09ef6",
+        "android_client_info": {
+          "package_name": "com.tonmay.streamly.streamly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDw6BF-3A_ZbY8Sr6cuhWOU7uQsoNlRnAQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

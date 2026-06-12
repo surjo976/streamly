@@ -19,7 +19,7 @@ class Channel {
       name: json['name'] as String? ?? 'Unknown Channel',
       logo: json['logo'] as String? ?? '',
       group: json['group'] as String? ?? 'General',
-      url: json['url'] as String? ?? '',
+      url: (json['url'] as String? ?? '').replaceAll('&amp;', '&'),
     );
   }
 

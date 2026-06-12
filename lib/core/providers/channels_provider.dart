@@ -1,12 +1,42 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:http/http.dart' as http;
 import '../models/channel_model.dart';
 
-// FutureProvider to load and parse the channels list from assets/files.json with index-based unique IDs
+// FutureProvider to load and parse the channels list dynamically from Remote Config URL
 final channelsProvider = FutureProvider<List<Channel>>((ref) async {
-  final jsonString = await rootBundle.loadString('assets/files.json');
-  final List<dynamic> jsonList = jsonDecode(jsonString) as List<dynamic>;
+  List<dynamic> jsonList = [];
+
+  try {
+    // 1. Initialize Remote Config
+    final remoteConfig = FirebaseRemoteConfig.instance;
+    await remoteConfig.setConfigSettings(RemoteConfigSettings(
+      fetchTimeout: const Duration(seconds: 10),
+      minimumFetchInterval: const Duration(hours: 1),
+    ));
+
+    // 2. Fetch and activate config values
+    await remoteConfig.fetchAndActivate();
+
+    // 3. Get remote channel list JSON directly from parameter
+    final channelsJsonString = remoteConfig.getString('channels_json');
+
+    if (channelsJsonString.isNotEmpty) {
+      // 4. Parse the JSON string
+      jsonList = jsonDecode(channelsJsonString) as List<dynamic>;
+    }
+  } catch (e) {
+    // Fallback gracefully on any configuration or network errors
+    print('Firebase Remote Config error: $e. Falling back to local assets.');
+  }
+
+  // 5. Fallback to local asset if remote loading failed or returned empty list
+  if (jsonList.isEmpty) {
+    final jsonString = await rootBundle.loadString('assets/files.json');
+    jsonList = jsonDecode(jsonString) as List<dynamic>;
+  }
   
   final List<Channel> list = [];
   for (int i = 0; i < jsonList.length; i++) {
