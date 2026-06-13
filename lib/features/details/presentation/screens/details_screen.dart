@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/providers/channels_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../watchlist/presentation/providers/watchlist_provider.dart';
+import '../../../home/presentation/widgets/channel_card.dart';
 
 class DetailsScreen extends ConsumerWidget {
   final String channelId;
@@ -207,41 +208,11 @@ class DetailsScreen extends ConsumerWidget {
                       const SizedBox(height: 24),
 
                       // Actions Play Button
-                      Container(
-                        width: double.infinity,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.35),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            context.push('/player/${channel.id}');
-                          },
-                          icon: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
-                          label: const Text(
-                            'Stream Live Now',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        ),
+                      TVPlayButton(
+                        onPressed: () {
+                          context.push('/player/${channel.id}');
+                        },
+                        label: 'Stream Live Now',
                       ),
                       
                       const SizedBox(height: 30),
@@ -278,61 +249,16 @@ class DetailsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         SizedBox(
-                          height: 150,
+                          height: 170,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: recommendations.length,
                             itemBuilder: (context, index) {
                               final recChannel = recommendations[index];
-                              return GestureDetector(
-                                onTap: () {
-                                  context.pushReplacement('/details/${recChannel.id}');
-                                },
-                                child: Container(
-                                  width: 100,
-                                  margin: const EdgeInsets.only(right: 12),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        height: 100,
-                                        width: 100,
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.surfaceColor,
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.white.withOpacity(0.04)),
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: recChannel.logo.isNotEmpty
-                                              ? CachedNetworkImage(
-                                                  imageUrl: recChannel.logo,
-                                                  fit: BoxFit.contain,
-                                                  errorWidget: (_, __, ___) => const Icon(
-                                                    Icons.live_tv_rounded,
-                                                    color: AppTheme.textSecondary,
-                                                  ),
-                                                )
-                                              : const Icon(
-                                                  Icons.live_tv_rounded,
-                                                  color: AppTheme.textSecondary,
-                                                ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        recChannel.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              return ChannelCard(
+                                channel: recChannel,
+                                size: 100,
+                                heroTagPrefix: 'rec',
                               );
                             },
                           ),
@@ -351,6 +277,94 @@ class DetailsScreen extends ConsumerWidget {
         ),
         error: (err, stack) => Center(
           child: Text('Error loading channel details: $err', style: const TextStyle(color: Colors.white)),
+        ),
+      ),
+    );
+  }
+}
+
+class TVPlayButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final String label;
+
+  const TVPlayButton({
+    super.key,
+    required this.onPressed,
+    required this.label,
+  });
+
+  @override
+  State<TVPlayButton> createState() => _TVPlayButtonState();
+}
+
+class _TVPlayButtonState extends State<TVPlayButton> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: _isFocused ? 1.04 : 1.0,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      child: InkWell(
+        onTap: widget.onPressed,
+        onFocusChange: (value) {
+          setState(() {
+            _isFocused = value;
+          });
+        },
+        onHover: (value) {
+          setState(() {
+            _isFocused = value;
+          });
+        },
+        borderRadius: BorderRadius.circular(16),
+        focusColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: double.infinity,
+          height: 54,
+          decoration: BoxDecoration(
+            gradient: _isFocused
+                ? const LinearGradient(
+                    colors: [Colors.white, Colors.white],
+                  )
+                : AppTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: _isFocused
+                    ? Colors.white.withOpacity(0.4)
+                    : AppTheme.primaryColor.withOpacity(0.35),
+                blurRadius: _isFocused ? 20 : 16,
+                offset: _isFocused ? const Offset(0, 6) : const Offset(0, 8),
+              ),
+            ],
+            border: _isFocused
+                ? Border.all(color: AppTheme.primaryColor, width: 2.5)
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.play_arrow_rounded,
+                color: _isFocused ? Colors.black : Colors.white,
+                size: 28,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: _isFocused ? Colors.black : Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

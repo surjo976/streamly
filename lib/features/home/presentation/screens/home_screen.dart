@@ -266,52 +266,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              // Actions
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(
+                  TVHeroButton(
                     onPressed: () {
                       context.push('/player/${channel.id}');
                     },
-                    icon: const Icon(Icons.play_arrow_rounded, size: 28, color: Colors.black),
-                    label: const Text(
-                      'Watch Live',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
+                    icon: Icons.play_arrow_rounded,
+                    label: 'Watch Live',
+                    isPrimary: true,
                   ),
                   const SizedBox(width: 12),
-                  OutlinedButton.icon(
+                  TVHeroButton(
                     onPressed: () {
                       context.push('/details/${channel.id}?heroTag=banner');
                     },
-                    icon: const Icon(Icons.info_outline_rounded, size: 22, color: Colors.white),
-                    label: const Text(
-                      'Info',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white60, width: 1.5),
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
+                    icon: Icons.info_outline_rounded,
+                    label: 'Info',
+                    isPrimary: false,
                   ),
                 ],
               ),
@@ -334,9 +307,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           final isSelected = group == _selectedCategory;
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: ChoiceChip(
-              label: Text(group),
-              selected: isSelected,
+            child: FocusHelperChip(
+              group: group,
+              isSelected: isSelected,
               onSelected: (selected) {
                 if (selected) {
                   setState(() {
@@ -344,20 +317,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   });
                 }
               },
-              selectedColor: AppTheme.primaryColor.withOpacity(0.25),
-              checkmarkColor: AppTheme.primaryColor,
-              backgroundColor: AppTheme.surfaceColor,
-              labelStyle: TextStyle(
-                color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: isSelected ? AppTheme.primaryColor : Colors.white.withOpacity(0.05),
-                  width: 1.2,
-                ),
-              ),
             ),
           );
         },
@@ -459,6 +418,209 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class FocusHelperChip extends StatefulWidget {
+  final String group;
+  final bool isSelected;
+  final ValueChanged<bool> onSelected;
+
+  const FocusHelperChip({
+    super.key,
+    required this.group,
+    required this.isSelected,
+    required this.onSelected,
+  });
+
+  @override
+  State<FocusHelperChip> createState() => _FocusHelperChipState();
+}
+
+class _FocusHelperChipState extends State<FocusHelperChip> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = widget.isSelected;
+    return AnimatedScale(
+      scale: _isFocused ? 1.08 : 1.0,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      child: InkWell(
+        onTap: () => widget.onSelected(!isSelected),
+        onFocusChange: (value) {
+          setState(() {
+            _isFocused = value;
+          });
+        },
+        onHover: (value) {
+          setState(() {
+            _isFocused = value;
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
+        focusColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          decoration: BoxDecoration(
+            color: _isFocused
+                ? AppTheme.primaryColor.withOpacity(0.35)
+                : (isSelected
+                    ? AppTheme.primaryColor.withOpacity(0.25)
+                    : AppTheme.surfaceColor),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isFocused
+                  ? AppTheme.primaryColor
+                  : (isSelected ? AppTheme.primaryColor : Colors.white.withOpacity(0.05)),
+              width: _isFocused ? 2.0 : 1.2,
+            ),
+            boxShadow: _isFocused
+                ? [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    )
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected) ...[
+                const Icon(
+                  Icons.check,
+                  color: AppTheme.primaryColor,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                widget.group,
+                style: TextStyle(
+                  color: _isFocused
+                      ? Colors.white
+                      : (isSelected ? AppTheme.primaryColor : AppTheme.textSecondary),
+                  fontWeight: (isSelected || _isFocused) ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TVHeroButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String label;
+  final bool isPrimary;
+
+  const TVHeroButton({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+    required this.isPrimary,
+  });
+
+  @override
+  State<TVHeroButton> createState() => _TVHeroButtonState();
+}
+
+class _TVHeroButtonState extends State<TVHeroButton> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPrimary = widget.isPrimary;
+    final primaryColor = AppTheme.primaryColor;
+
+    Color getBgColor() {
+      if (_isFocused) return primaryColor;
+      return isPrimary ? Colors.white : Colors.transparent;
+    }
+
+    Color getTextColor() {
+      if (_isFocused) return Colors.black;
+      return isPrimary ? Colors.black : Colors.white;
+    }
+
+    Color getIconColor() {
+      if (_isFocused) return Colors.black;
+      return isPrimary ? Colors.black : Colors.white;
+    }
+
+    BorderSide getBorder() {
+      if (_isFocused) {
+        return BorderSide(color: primaryColor, width: 2);
+      }
+      return isPrimary ? BorderSide.none : const BorderSide(color: Colors.white60, width: 1.5);
+    }
+
+    return AnimatedScale(
+      scale: _isFocused ? 1.08 : 1.0,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      child: InkWell(
+        onTap: widget.onPressed,
+        onFocusChange: (value) {
+          setState(() {
+            _isFocused = value;
+          });
+        },
+        onHover: (value) {
+          setState(() {
+            _isFocused = value;
+          });
+        },
+        borderRadius: BorderRadius.circular(14),
+        focusColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+          decoration: BoxDecoration(
+            color: getBgColor(),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.fromBorderSide(getBorder()),
+            boxShadow: _isFocused
+                ? [
+                    BoxShadow(
+                      color: primaryColor.withOpacity(0.4),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    )
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: isPrimary ? 28 : 22, color: getIconColor()),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: getTextColor(),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
